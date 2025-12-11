@@ -1,4 +1,4 @@
-# Secure File Vault
+# Secure File Vault v1.1
 
 A standalone Java application for a Software Security group project. This app allows users to register, log in securely, and encrypt/decrypt local files. It also tracks every user action in an audit log for security accountability.
 
@@ -42,3 +42,8 @@ You can register a new user, or use this pre-registered account if the database 
 * **Confidentiality:** Files are encrypted using a generated AES secret key stored locally (`vault.key`).
 * **Integrity:** Passwords are checked using `BCrypt.checkpw()` to prevent rainbow table attacks.
 * **Accountability:** The `audit_logs` table creates a permanent record of who did what and when.
+
+## What's New in Update v1.1?
+
+* **Standalone Execution:** The project can now be packaged into a single, executable JAR file (a "Fat JAR") using the Maven Shade Plugin configuration added to `pom.xml`.
+* **Zero Dependency Run:** Users no longer need to import the project into an IDE. The application can be launched directly from the command line using `java -jar filevault-1.0-SNAPSHOT.jar`, or by simply double-clicking the file (assuming Java is installed).
