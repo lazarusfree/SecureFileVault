@@ -11,7 +11,7 @@ A standalone Java application for a Software Security group project. This app al
 
 ## 🛠️ Tech Stack
 
-* **Language:** Java (OpenJDK 25)
+* **Language:** Java (OpenJDK 21)
 * **Database:** SQLite (via JDBC)
 * **Security:** JBCrypt (Password Hashing), Java Native Crypto (AES)
 * **IDE:** IntelliJ IDEA
