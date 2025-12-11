@@ -2,6 +2,8 @@
 
 A standalone Java application for a Software Security group project. This app allows users to register, log in securely, and encrypt/decrypt local files. It also tracks every user action in an audit log for security accountability.
 
+ENSURE THAT YOU ARE RUNNING ATLEAST JAVA 21.
+
 ## 🚀 Features
 
 * **Secure Authentication:** User passwords are hashed using **BCrypt** (salted automatically) before being stored in SQLite. No plain text passwords are ever saved.
