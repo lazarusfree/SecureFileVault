@@ -5,25 +5,24 @@ import com.securityproject.utils.SecurityUtils;
 import java.sql.*;
 
 public class DatabaseManager {
-    // The name of the file where data will be stored
+    //vault name
     private static final String DB_URL = "jdbc:sqlite:securevault.db";
 
-    //Connect to the database. If the file doesn't exist, SQLite creates it automatically.
+    //connecti to database.
     public static Connection connect() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
 
-     //Initialize the database tables.
-     //Run this once when the application starts.
+     //init database
     public static void initialize() {
-        // SQL for creating the Users table
+        //user table
         String sqlUsers = "CREATE TABLE IF NOT EXISTS users (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "username TEXT NOT NULL UNIQUE, " +
                 "password_hash TEXT NOT NULL" +
                 ");";
 
-        // SQL for creating the Audit Log table
+        //audit log table
         String sqlAudit = "CREATE TABLE IF NOT EXISTS audit_logs (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "user_id INTEGER, " +
@@ -35,7 +34,7 @@ public class DatabaseManager {
         try (Connection conn = connect();
              Statement stmt = conn.createStatement()) {
 
-            // Execute the SQL commands
+            //execute command
             stmt.execute(sqlUsers);
             stmt.execute(sqlAudit);
             System.out.println("Database initialized successfully.");

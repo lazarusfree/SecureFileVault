@@ -43,7 +43,7 @@ public class Main {
         */
 
 
-        // Phase 2 Test: Initialize the database
+        //init. database
         System.out.println("--- System Startup ---");
         DatabaseManager.initialize();
 
