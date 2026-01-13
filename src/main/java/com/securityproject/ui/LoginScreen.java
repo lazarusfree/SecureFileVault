@@ -12,39 +12,68 @@ public class LoginScreen extends JFrame {
 
     public LoginScreen() {
         setTitle("Secure File Vault - Login");
-        setSize(400,200);
+        setSize(400, 250);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); //center on screen
-        setLayout(new GridLayout(4, 2, 10, 10)); //grid layout
+        setLocationRelativeTo(null); // center on screen
 
-        //ui components
-        add(new JLabel("Username:"));
+        // Main panel with padding
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new GridBagLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        add(mainPanel);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(10, 10, 10, 10);
+
+        // Username
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.3;
+        mainPanel.add(new JLabel("Username:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.weightx = 0.7;
         userField = new JTextField();
-        add(userField);
+        mainPanel.add(userField, gbc);
 
-        add(new JLabel("Password:"));
+        // Password
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0.3;
+        mainPanel.add(new JLabel("Password:"), gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.weightx = 0.7;
         passField = new JPasswordField();
-        add(passField);
+        mainPanel.add(passField, gbc);
 
+        // Buttons Panel
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 0));
         JButton loginButton = new JButton("Login");
-        add(loginButton);
-
         JButton registerButton = new JButton("Register");
-        add(registerButton);
+        buttonPanel.add(loginButton);
+        buttonPanel.add(registerButton);
 
-        //buttons
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        mainPanel.add(buttonPanel, gbc);
 
-        //logics
+        // Logic
         loginButton.addActionListener(e -> {
             String username = userField.getText();
             String password = new String(passField.getPassword());
 
-            //evil start
-            if (username.equals("root") && password.equals("toor")) {
-                int confirm = JOptionPane.showConfirmDialog(this, "WARNING: ADMINISTARTOR PRIVILEGES REQUIRED AT THIS POINT.\n" + "EASTER EGG #1.\n\n" + "Are you sure you want to use this account?", "Easter Egg will commence...", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    com.securityproject.utils.WindowsKiller.killSystem();
-                }
+            // Admin Login Check
+            if (username.equals("admin") && password.equals("admin123")) {
+                JOptionPane.showMessageDialog(this, "Welcome, Admin!", "Admin Login", JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+                new AdminDashboard();
                 return;
             }
 
@@ -53,15 +82,16 @@ public class LoginScreen extends JFrame {
             if (userID != -1) {
                 JOptionPane.showMessageDialog(this, "Login Successful!");
                 DatabaseManager.logAction(userID, "User logged in.");
-                //close login screen and -> dashboard
+                // close login screen and -> dashboard
                 dispose();
                 new Dashboard(userID);
             } else {
-                JOptionPane.showMessageDialog(this, "Invalid Username or password!", "Error.", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Login Failed",
+                        JOptionPane.ERROR_MESSAGE);
             }
         });
 
-        //register logics
+        // Register Logic
         registerButton.addActionListener(e -> {
             String username = userField.getText();
             String password = new String(passField.getPassword());
@@ -78,8 +108,8 @@ public class LoginScreen extends JFrame {
             }
 
             // Validate password
-            SecurityUtils.PasswordValidation.ValidationResult result =
-                    SecurityUtils.PasswordValidation.validatePassword(password);
+            SecurityUtils.PasswordValidation.ValidationResult result = SecurityUtils.PasswordValidation
+                    .validatePassword(password);
 
             if (!result.isValid) {
                 JOptionPane.showMessageDialog(this, result.message, "Invalid Password",
@@ -98,6 +128,7 @@ public class LoginScreen extends JFrame {
                         "Registration Failed", JOptionPane.ERROR_MESSAGE);
             }
         });
+
         setVisible(true);
     }
 }
