@@ -1,51 +1,52 @@
-# Secure File Vault v1.1
+# Secure File Vault v1.2
 
-A standalone Java application for a Software Security group project. This app allows users to register, log in securely, and encrypt/decrypt local files. It also tracks every user action in an audit log for security accountability.
+A standalone Java application for secure file encryption and management. This app allows users to register, log in securely, and encrypt/decrypt local files using AES-256. It features a modern dark UI, strict file ownership enforcement, and detailed audit logging.
 
-ENSURE THAT YOU ARE RUNNING ATLEAST JAVA 21.
+## Features
 
-## 🚀 Features
-
-* **Secure Authentication:** User passwords are hashed using **BCrypt** (salted automatically) before being stored in SQLite. No plain text passwords are ever saved.
+* **Secure Authentication:** User passwords are hashed using BCrypt before being stored. No plain text passwords are ever saved.
+* **Intelligent File Ownership:** Users can only decrypt files that they personally encrypted. Unauthorized access attempts are blocked and logged.
 * **AES Encryption:** Uses the Java Cryptography Architecture (JCA) to encrypt files with AES-256.
-* **Audit Logging:** Automatically records login attempts, file encryption, and decryption events with timestamps.
-* **GUI Dashboard:** Built with Java Swing for easy file selection and management.
+* **Modern UI:** Built with Java Swing and FlatLaf for a clean, professional dark mode experience.
+* **Admin Dashboard:** A dedicated view for administrators to monitor all registered users and review audit logs.
+* **Interactive Assistant:** "Moonpie", the vault guardian, provides real-time feedback and guidance within the application.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Language:** Java (OpenJDK 21)
-* **Database:** SQLite (via JDBC)
-* **Security:** JBCrypt (Password Hashing), Java Native Crypto (AES)
-* **IDE:** IntelliJ IDEA
+* **Database:** SQLite
+* **Security:** JBCrypt, Java Native Crypto (AES)
+* **UI:** FlatLaf (Swing Look and Feel)
 
-## ⚙️ How to Run
+## How to Run
 
-1.  Clone this repository or download the ZIP.
-2.  Open the project in **IntelliJ IDEA**.
-3.  Allow Maven to download the dependencies (SQLite driver, JBCrypt).
-4.  Run `src/main/java/com/securityproject/Main.java`.
-5.  The database `securevault.db` will be created automatically on the first run.
+1.  Open the project in **IntelliJ IDEA**.
+2.  Allow Maven to resolve dependencies.
+3.  Run `src/main/java/com/securityproject/Main.java`.
+4.  The database `securevault.db` will be created automatically on startup.
 
-## 🧪 Test Credentials
+**Building a JAR:**
+Please refer to the `build_guide.md` file included in this repository for detailed instructions on how to build a standalone executable JAR using IntelliJ IDEA.
 
-You can register a new user, or use this pre-registered account if the database file is included:
+## Credentials
 
-* **Username:** rezza
-* **Password:** mySuperSecretPass
+### Standard User
+You can register a new user at the login screen.
 
-## 📂 Project Structure
+### Admin User
+To access the Admin Dashboard, use the following credentials:
+* **Username:** admin
+* **Password:** admin123
 
-* `db/` - Handles SQLite connection and audit logging.
-* `utils/` - Contains the `SecurityUtils` class for AES encryption logic and BCrypt hashing.
-* `ui/` - Contains the Login screen and Dashboard GUI.
+## Project Structure
 
-## 📝 Security Implementation Details
+* `db/` - Handles SQLite connection, user management, and audit logging.
+* `utils/` - Contains `SecurityUtils` for encryption/hashing and `Cowsay` for the assistant.
+* `ui/` - Contains all GUI classes (`LoginScreen`, `Dashboard`, `AdminDashboard`).
+
+## Security Implementation
 
 * **Confidentiality:** Files are encrypted using a generated AES secret key stored locally (`vault.key`).
-* **Integrity:** Passwords are checked using `BCrypt.checkpw()` to prevent rainbow table attacks.
-* **Accountability:** The `audit_logs` table creates a permanent record of who did what and when.
-
-## What's New in Update v1.1?
-
-* **Standalone Execution:** The project can now be packaged into a single, executable JAR file (a "Fat JAR") using the Maven Shade Plugin configuration added to `pom.xml`.
-* **Zero Dependency Run:** Users no longer need to import the project into an IDE. The application can be launched directly from the command line using `java -jar filevault-1.0-SNAPSHOT.jar`, or by simply double-clicking the file (assuming Java is installed).
+* **Integrity:** Passwords are verified using BCrypt to prevent rainbow table attacks.
+* **Accountability:** The `audit_logs` table creates a permanent record of all user actions, including login events and file operations.
+* **Access Control:** The application enforces ownership checks to ensure users cannot decrypt files belonging to others.
