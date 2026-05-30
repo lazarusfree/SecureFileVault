@@ -3,7 +3,6 @@ package com.securityproject.ui;
 import com.securityproject.db.DatabaseManager;
 import com.securityproject.utils.SecurityUtils;
 import javax.swing.*;
-import javax.xml.crypto.Data;
 import java.awt.*;
 
 public class LoginScreen extends JFrame {
@@ -69,22 +68,19 @@ public class LoginScreen extends JFrame {
             String username = userField.getText();
             String password = new String(passField.getPassword());
 
-            // Admin Login Check
-            if (username.equals("admin") && password.equals("admin123")) {
-                JOptionPane.showMessageDialog(this, "Welcome, Admin!", "Admin Login", JOptionPane.INFORMATION_MESSAGE);
-                dispose();
-                new AdminDashboard();
-                return;
-            }
-
             int userID = DatabaseManager.authenticateUser(username, password);
 
             if (userID != -1) {
-                JOptionPane.showMessageDialog(this, "Login Successful!");
                 DatabaseManager.logAction(userID, "User logged in.");
-                // close login screen and -> dashboard
                 dispose();
-                new Dashboard(userID);
+                if ("ADMIN".equals(DatabaseManager.getUserRole(userID))) {
+                    JOptionPane.showMessageDialog(this, "Welcome, Admin!", "Admin Login",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    new AdminDashboard();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Login Successful!");
+                    new Dashboard(userID);
+                }
             } else {
                 JOptionPane.showMessageDialog(this, "Invalid Username or Password!", "Login Failed",
                         JOptionPane.ERROR_MESSAGE);
