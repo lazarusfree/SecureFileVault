@@ -31,11 +31,20 @@ public class AdminDashboard extends JFrame {
 
         // Users Tab
         JPanel usersPanel = new JPanel(new BorderLayout());
-        String[] userColumns = { "ID", "Username", "Password Hash" };
+        String[] userColumns = { "ID", "Username", "Role", "Password Hash" };
         DefaultTableModel userModel = new DefaultTableModel(userColumns, 0);
         JTable userTable = new JTable(userModel);
         usersPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
         tabbedPane.addTab("Users", usersPanel);
+
+        // Files Tab
+        JPanel filesPanel = new JPanel(new BorderLayout());
+        String[] fileColumns = { "ID", "User ID", "User", "Original Path", "Encrypted Path", "Algorithm",
+                "SHA-256", "Created" };
+        DefaultTableModel fileModel = new DefaultTableModel(fileColumns, 0);
+        JTable fileTable = new JTable(fileModel);
+        filesPanel.add(new JScrollPane(fileTable), BorderLayout.CENTER);
+        tabbedPane.addTab("Encrypted Files", filesPanel);
 
         // Audit Logs Tab
         JPanel auditPanel = new JPanel(new BorderLayout());
@@ -48,7 +57,7 @@ public class AdminDashboard extends JFrame {
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
         // Load Data
-        loadData(userModel, auditModel);
+        loadData(userModel, fileModel, auditModel);
 
         // Cowsay Panel (South)
         JPanel southPanel = new JPanel(new BorderLayout());
@@ -60,8 +69,8 @@ public class AdminDashboard extends JFrame {
 
         JButton refreshBtn = new JButton("Refresh Data");
         refreshBtn.addActionListener(e -> {
-            loadData(userModel, auditModel);
-            cowArea.setText(Cowsay.say("Data refreshed! Moo!"));
+            loadData(userModel, fileModel, auditModel);
+            cowArea.setText(Cowsay.say("Data refreshed."));
         });
 
         JButton logoutBtn = new JButton("Logout");
@@ -80,15 +89,22 @@ public class AdminDashboard extends JFrame {
         setVisible(true);
     }
 
-    private void loadData(DefaultTableModel userModel, DefaultTableModel auditModel) {
+    private void loadData(DefaultTableModel userModel, DefaultTableModel fileModel, DefaultTableModel auditModel) {
         // Clear existing data
         userModel.setRowCount(0);
+        fileModel.setRowCount(0);
         auditModel.setRowCount(0);
 
         // Load Users
         List<String[]> users = DatabaseManager.getAllUsers();
         for (String[] user : users) {
             userModel.addRow(user);
+        }
+
+        // Load Files
+        List<String[]> files = DatabaseManager.getAllFiles();
+        for (String[] file : files) {
+            fileModel.addRow(file);
         }
 
         // Load Audit Logs
