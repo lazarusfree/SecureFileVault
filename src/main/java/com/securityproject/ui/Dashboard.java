@@ -5,7 +5,6 @@ import com.securityproject.utils.SecurityUtils;
 
 import javax.crypto.SecretKey;
 import javax.swing.*;
-import javax.xml.crypto.Data;
 import java.awt.*;
 import java.io.File;
 
@@ -44,8 +43,16 @@ public class Dashboard extends JFrame {
         statusLabel.setForeground(Color.GRAY);
         mainPanel.add(statusLabel, gbc);
 
-        // Cow Area
+        // Security services panel
         gbc.gridy = 2;
+        JPanel securityPanel = new JPanel(new GridLayout(1, 3, 10, 0));
+        securityPanel.add(new JLabel("Confidentiality: AES-256-GCM", SwingConstants.CENTER));
+        securityPanel.add(new JLabel("Integrity: GCM tag + SHA-256", SwingConstants.CENTER));
+        securityPanel.add(new JLabel("Authenticity: login + owner metadata", SwingConstants.CENTER));
+        mainPanel.add(securityPanel, gbc);
+
+        // Cow Area
+        gbc.gridy = 3;
         gbc.weighty = 1.0;
         gbc.fill = GridBagConstraints.BOTH;
         cowArea = new JTextArea();
@@ -64,7 +71,7 @@ public class Dashboard extends JFrame {
         buttonPanel.add(decryptBtn);
         buttonPanel.add(logoutBtn);
 
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.weighty = 0.0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.SOUTH;
@@ -104,37 +111,55 @@ public class Dashboard extends JFrame {
                 SecretKey key = SecurityUtils.loadOrGenerateKey();
 
                 if (isEncrypted) {
-                    SecurityUtils.encryptFile(selectedFile, outputFile, key);
+                    SecurityUtils.EncryptionResult encryptionResult =
+                            SecurityUtils.encryptFile(selectedFile, outputFile, key, currentUserID);
 
                     // RECORD OWNERSHIP
-                    DatabaseManager.addFile(currentUserID, selectedFile.getAbsolutePath() + ".enc");
+                    DatabaseManager.addFile(
+                            currentUserID,
+                            selectedFile.getAbsolutePath(),
+                            outputFile.getAbsolutePath(),
+                            encryptionResult.algorithm(),
+                            encryptionResult.ciphertextSha256(),
+                            encryptionResult.authenticatedMetadata()
+                    );
 
                     DatabaseManager.logAction(currentUserID,
-                            "File encrypted successfully. Encrypted file: " + selectedFile.getAbsolutePath());
+                            "File encrypted with " + encryptionResult.algorithm() + ". SHA-256: "
+                                    + encryptionResult.ciphertextSha256());
                     statusLabel.setText("Encrypted: " + outputFile.getName());
-                    cowArea.setText(com.securityproject.utils.Cowsay.say("File locked! Only you can open it now."));
-                    HtmlMessage("File encrypted successfully!<br>Saved as: <b>" + outputFile.getName() + "</b>",
+                    cowArea.setText(com.securityproject.utils.Cowsay.say("File locked with authenticated encryption."));
+                    HtmlMessage("File encrypted successfully!<br>Saved as: <b>" + outputFile.getName()
+                                    + "</b><br>Algorithm: <b>" + encryptionResult.algorithm()
+                                    + "</b><br>SHA-256: <b>" + encryptionResult.ciphertextSha256() + "</b>",
                             "Success");
                 } else {
                     // CHECK OWNERSHIP
                     if (!DatabaseManager.checkFileAccess(currentUserID, selectedFile.getAbsolutePath())) {
                         cowArea.setText(com.securityproject.utils.Cowsay.say("MOOO! STOP! You don't own this file!"));
+                        DatabaseManager.logAction(currentUserID,
+                                "Blocked unauthorized decrypt attempt: " + selectedFile.getAbsolutePath());
                         JOptionPane.showMessageDialog(this,
                                 "Access Denied: You cannot decrypt a file you didn't encrypt.", "Security Alert",
                                 JOptionPane.ERROR_MESSAGE);
                         return;
                     }
 
-                    SecurityUtils.decryptFile(selectedFile, outputFile, key);
-                    DatabaseManager.logAction(currentUserID, "Decrypted file: " + selectedFile.getName());
+                    SecurityUtils.DecryptionResult decryptionResult =
+                            SecurityUtils.decryptFile(selectedFile, outputFile, key, currentUserID);
+                    DatabaseManager.logAction(currentUserID,
+                            "Decrypted file after integrity/authenticity verification: " + selectedFile.getName());
                     statusLabel.setText("Decrypted: " + outputFile.getName());
-                    cowArea.setText(com.securityproject.utils.Cowsay.say("File unlocked. Enjoy your secrets!"));
-                    HtmlMessage("File decrypted successfully!<br>Saved as: <b>" + outputFile.getName() + "</b>",
+                    cowArea.setText(com.securityproject.utils.Cowsay.say("File unlocked after GCM verification."));
+                    HtmlMessage("File decrypted successfully!<br>Saved as: <b>" + outputFile.getName()
+                                    + "</b><br>Verified: <b>" + decryptionResult.algorithm() + "</b>",
                             "Success");
                 }
 
             } catch (Exception ex) {
                 ex.printStackTrace();
+                DatabaseManager.logAction(currentUserID,
+                        "File operation failed integrity/authenticity check or IO step: " + ex.getMessage());
                 statusLabel.setText("Error: " + ex.getMessage());
                 cowArea.setText(com.securityproject.utils.Cowsay.say("Uh oh... something went wrong."));
                 JOptionPane.showMessageDialog(this, "Operation Failed: " + ex.getMessage(), "Error",
