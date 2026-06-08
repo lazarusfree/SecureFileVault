@@ -1,29 +1,22 @@
-package com.securityproject.utils;
+package com.securityproject.util;
 
-public class Cowsay {
+public final class Cowsay {
+    private Cowsay() {}
 
     public static String say(String message) {
         int length = message.length();
         StringBuilder sb = new StringBuilder();
 
-        // Top border
         sb.append(" ");
-        for (int i = 0; i < length + 2; i++) {
-            sb.append("_");
-        }
+        sb.append("_".repeat(length + 2));
         sb.append(" \n");
 
-        // Message
-        sb.append("< " + message + " >\n");
+        sb.append("< ").append(message).append(" >\n");
 
-        // Bottom border
         sb.append(" ");
-        for (int i = 0; i < length + 2; i++) {
-            sb.append("-");
-        }
+        sb.append("-".repeat(length + 2));
         sb.append(" \n");
 
-        // The Cow
         sb.append("        \\   ^__^\n");
         sb.append("         \\  (oo)\\_______\n");
         sb.append("            (__)\\       )\\/\\\n");

@@ -1,7 +1,13 @@
 package com.securityproject.ui;
 
-import com.securityproject.db.DatabaseManager;
-import com.securityproject.utils.Cowsay;
+import com.securityproject.AppContext;
+import com.securityproject.model.AuditLog;
+import com.securityproject.model.User;
+import com.securityproject.model.VaultFile;
+import com.securityproject.repository.AuditRepository;
+import com.securityproject.repository.FileRepository;
+import com.securityproject.repository.UserRepository;
+import com.securityproject.util.Cowsay;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -9,57 +15,56 @@ import java.awt.*;
 import java.util.List;
 
 public class AdminDashboard extends JFrame {
+    private final int adminUserId;
+    private final UserRepository userRepo;
+    private final FileRepository fileRepo;
+    private final AuditRepository auditRepo;
 
-    public AdminDashboard() {
+    public AdminDashboard(int adminUserId) {
+        this.adminUserId = adminUserId;
+        AppContext ctx = AppContext.getInstance();
+        this.userRepo = ctx.users();
+        this.fileRepo = ctx.files();
+        this.auditRepo = ctx.audit();
+
         setTitle("Secure File Vault - Admin Dashboard");
-        setSize(800, 600);
+        setSize(900, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Main Panel
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         add(mainPanel);
 
-        // Header
         JLabel headerLabel = new JLabel("Admin Dashboard", SwingConstants.CENTER);
         headerLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         mainPanel.add(headerLabel, BorderLayout.NORTH);
 
-        // Tabbed Pane for Data
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        // Users Tab
-        JPanel usersPanel = new JPanel(new BorderLayout());
-        String[] userColumns = { "ID", "Username", "Role" };
+        // Users tab
+        String[] userColumns = {"ID", "Username", "Role"};
         DefaultTableModel userModel = new DefaultTableModel(userColumns, 0);
         JTable userTable = new JTable(userModel);
-        usersPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
-        tabbedPane.addTab("Users", usersPanel);
+        tabbedPane.addTab("Users", new JScrollPane(userTable));
 
-        // Files Tab
-        JPanel filesPanel = new JPanel(new BorderLayout());
-        String[] fileColumns = { "ID", "User ID", "User", "Original Path", "Encrypted Path", "Algorithm",
-                "SHA-256", "Created" };
+        // Files tab
+        String[] fileColumns = {"ID", "User ID", "User", "Original Path", "Encrypted Path",
+                "Algorithm", "SHA-256", "Created"};
         DefaultTableModel fileModel = new DefaultTableModel(fileColumns, 0);
         JTable fileTable = new JTable(fileModel);
-        filesPanel.add(new JScrollPane(fileTable), BorderLayout.CENTER);
-        tabbedPane.addTab("Encrypted Files", filesPanel);
+        tabbedPane.addTab("Encrypted Files", new JScrollPane(fileTable));
 
-        // Audit Logs Tab
-        JPanel auditPanel = new JPanel(new BorderLayout());
-        String[] auditColumns = { "ID", "User ID", "User", "Action", "Timestamp" };
+        // Audit tab
+        String[] auditColumns = {"ID", "User ID", "User", "Action", "Timestamp"};
         DefaultTableModel auditModel = new DefaultTableModel(auditColumns, 0);
         JTable auditTable = new JTable(auditModel);
-        auditPanel.add(new JScrollPane(auditTable), BorderLayout.CENTER);
-        tabbedPane.addTab("Audit Logs", auditPanel);
+        tabbedPane.addTab("Audit Logs", new JScrollPane(auditTable));
 
         mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
-        // Load Data
         loadData(userModel, fileModel, auditModel);
 
-        // Cowsay Panel (South)
         JPanel southPanel = new JPanel(new BorderLayout());
         JTextArea cowArea = new JTextArea();
         cowArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -75,7 +80,7 @@ public class AdminDashboard extends JFrame {
 
         JButton logoutBtn = new JButton("Logout");
         logoutBtn.addActionListener(e -> {
-            DatabaseManager.logAction(1, "Admin logged out.");
+            auditRepo.log(adminUserId, "Admin logged out.");
             dispose();
             new LoginScreen();
         });
@@ -91,27 +96,26 @@ public class AdminDashboard extends JFrame {
     }
 
     private void loadData(DefaultTableModel userModel, DefaultTableModel fileModel, DefaultTableModel auditModel) {
-        // Clear existing data
         userModel.setRowCount(0);
         fileModel.setRowCount(0);
         auditModel.setRowCount(0);
 
-        // Load Users (omit password hash column)
-        List<String[]> users = DatabaseManager.getAllUsers();
-        for (String[] user : users) {
-            userModel.addRow(new String[] { user[0], user[1], user[2] });
+        for (User u : userRepo.findAll()) {
+            userModel.addRow(new Object[]{u.id(), u.username(), u.role()});
         }
 
-        // Load Files
-        List<String[]> files = DatabaseManager.getAllFiles();
-        for (String[] file : files) {
-            fileModel.addRow(file);
+        for (VaultFile f : fileRepo.findAll()) {
+            fileModel.addRow(new Object[]{
+                    f.id(), f.userId(), f.username(),
+                    f.originalPath(), f.encryptedPath(),
+                    f.algorithm(), f.integrityHash(), f.createdAt()
+            });
         }
 
-        // Load Audit Logs
-        List<String[]> logs = DatabaseManager.getAllAuditLogs();
-        for (String[] log : logs) {
-            auditModel.addRow(log);
+        for (AuditLog a : auditRepo.findAll()) {
+            auditModel.addRow(new Object[]{
+                    a.id(), a.userId(), a.username(), a.action(), a.timestamp()
+            });
         }
     }
 }
