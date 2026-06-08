@@ -34,7 +34,10 @@ public class SecurityUtils {
     private static final int SALT_BYTES = 16;
     private static final int FILE_KEY_BITS = 256;
     private static final int PBKDF2_ITERATIONS = 120_000;
-    private static final String KEY_FILE = "vault.key"; // Where we store the master key
+    // SECURITY: The master key is stored in plaintext on disk.
+    // This is for demonstration purposes. A production system should use
+    // a hardware security module or at minimum encrypt the key with a user-provided passphrase.
+    private static final String KEY_FILE = "vault.key";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     //bcrypt hashing password
@@ -75,8 +78,8 @@ public class SecurityUtils {
                     PosixFilePermission.OWNER_READ,
                     PosixFilePermission.OWNER_WRITE
             ));
-        } catch (Exception ignored) {
-            // Non-POSIX filesystems are still supported; this is a best-effort hardening step.
+        } catch (Exception ex) {
+            System.err.println("Key file permission hardening skipped: " + ex.getMessage());
         }
     }
 
@@ -205,6 +208,7 @@ public class SecurityUtils {
         return fileBytes.length > FILE_MAGIC.length && Arrays.equals(Arrays.copyOf(fileBytes, FILE_MAGIC.length), FILE_MAGIC);
     }
 
+    @Deprecated(forRemoval = true)
     private static void legacyDecryptFile(File inputFile, File outputFile, SecretKey key) throws Exception {
         Cipher cipher = Cipher.getInstance(ALGORITHM);
         cipher.init(Cipher.DECRYPT_MODE, key);
@@ -276,8 +280,9 @@ public class SecurityUtils {
                     "monkey", "letmein", "trustno1", "dragon", "baseball"
             };
 
+            String lowerPassword = password.toLowerCase();
             for (String common : commonPasswords) {
-                if (password.toLowerCase().contains(common.toLowerCase())) {
+                if (lowerPassword.equals(common)) {
                     return new ValidationResult(false,
                             "Password is too common! Please choose a stronger password.");
                 }

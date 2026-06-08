@@ -78,8 +78,8 @@ public class Dashboard extends JFrame {
         mainPanel.add(buttonPanel, gbc);
 
         // Action Listeners
-        encryptBtn.addActionListener(e -> handleFileOperation(true, statusLabel));
-        decryptBtn.addActionListener(e -> handleFileOperation(false, statusLabel));
+        encryptBtn.addActionListener(e -> handleFileOperation(FileAction.ENCRYPT, statusLabel));
+        decryptBtn.addActionListener(e -> handleFileOperation(FileAction.DECRYPT, statusLabel));
         logoutBtn.addActionListener(e -> {
             DatabaseManager.logAction(currentUserID, "User logged out.");
             dispose(); // Close dashboard
@@ -89,7 +89,9 @@ public class Dashboard extends JFrame {
         setVisible(true);
     }
 
-    private void handleFileOperation(boolean isEncrypted, JLabel statusLabel) {
+    private enum FileAction { ENCRYPT, DECRYPT }
+
+    private void handleFileOperation(FileAction action, JLabel statusLabel) {
         JFileChooser fileChooser = new JFileChooser();
         int result = fileChooser.showOpenDialog(this);
 
@@ -97,12 +99,16 @@ public class Dashboard extends JFrame {
             File selectedFile = fileChooser.getSelectedFile();
 
             // Auto-generate output name
-            String outputName = selectedFile.getAbsolutePath() + (isEncrypted ? ".enc" : "_decrypted");
-
-            // Clean up decryption name if possible
-            if (!isEncrypted && selectedFile.getName().endsWith(".enc")) {
-                outputName = selectedFile.getAbsolutePath().substring(0,
-                        selectedFile.getAbsolutePath().lastIndexOf(".enc"));
+            String outputName;
+            if (action == FileAction.ENCRYPT) {
+                outputName = selectedFile.getAbsolutePath() + ".enc";
+            } else {
+                String name = selectedFile.getAbsolutePath();
+                if (name.endsWith(".enc")) {
+                    outputName = name.substring(0, name.length() - ".enc".length());
+                } else {
+                    outputName = name + "_decrypted";
+                }
             }
 
             File outputFile = new File(outputName);
@@ -110,7 +116,7 @@ public class Dashboard extends JFrame {
             try {
                 SecretKey key = SecurityUtils.loadOrGenerateKey();
 
-                if (isEncrypted) {
+                if (action == FileAction.ENCRYPT) {
                     SecurityUtils.EncryptionResult encryptionResult =
                             SecurityUtils.encryptFile(selectedFile, outputFile, key, currentUserID);
 
@@ -125,11 +131,10 @@ public class Dashboard extends JFrame {
                     );
 
                     DatabaseManager.logAction(currentUserID,
-                            "File encrypted with " + encryptionResult.algorithm() + ". SHA-256: "
-                                    + encryptionResult.ciphertextSha256());
+                            "File encrypted with " + encryptionResult.algorithm() + ".");
                     statusLabel.setText("Encrypted: " + outputFile.getName());
                     cowArea.setText(com.securityproject.utils.Cowsay.say("File locked with authenticated encryption."));
-                    HtmlMessage("File encrypted successfully!<br>Saved as: <b>" + outputFile.getName()
+                    showHtmlMessage("File encrypted successfully!<br>Saved as: <b>" + outputFile.getName()
                                     + "</b><br>Algorithm: <b>" + encryptionResult.algorithm()
                                     + "</b><br>SHA-256: <b>" + encryptionResult.ciphertextSha256() + "</b>",
                             "Success");
@@ -151,7 +156,7 @@ public class Dashboard extends JFrame {
                             "Decrypted file after integrity/authenticity verification: " + selectedFile.getName());
                     statusLabel.setText("Decrypted: " + outputFile.getName());
                     cowArea.setText(com.securityproject.utils.Cowsay.say("File unlocked after GCM verification."));
-                    HtmlMessage("File decrypted successfully!<br>Saved as: <b>" + outputFile.getName()
+                    showHtmlMessage("File decrypted successfully!<br>Saved as: <b>" + outputFile.getName()
                                     + "</b><br>Verified: <b>" + decryptionResult.algorithm() + "</b>",
                             "Success");
                 }
@@ -168,7 +173,7 @@ public class Dashboard extends JFrame {
         }
     }
 
-    private void HtmlMessage(String msg, String title) {
+    private void showHtmlMessage(String msg, String title) {
         JLabel label = new JLabel("<html><body style='width: 300px'>" + msg + "</body></html>");
         JOptionPane.showMessageDialog(this, label, title, JOptionPane.INFORMATION_MESSAGE);
     }

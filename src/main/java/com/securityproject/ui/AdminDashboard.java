@@ -31,7 +31,7 @@ public class AdminDashboard extends JFrame {
 
         // Users Tab
         JPanel usersPanel = new JPanel(new BorderLayout());
-        String[] userColumns = { "ID", "Username", "Role", "Password Hash" };
+        String[] userColumns = { "ID", "Username", "Role" };
         DefaultTableModel userModel = new DefaultTableModel(userColumns, 0);
         JTable userTable = new JTable(userModel);
         usersPanel.add(new JScrollPane(userTable), BorderLayout.CENTER);
@@ -75,6 +75,7 @@ public class AdminDashboard extends JFrame {
 
         JButton logoutBtn = new JButton("Logout");
         logoutBtn.addActionListener(e -> {
+            DatabaseManager.logAction(1, "Admin logged out.");
             dispose();
             new LoginScreen();
         });
@@ -95,10 +96,10 @@ public class AdminDashboard extends JFrame {
         fileModel.setRowCount(0);
         auditModel.setRowCount(0);
 
-        // Load Users
+        // Load Users (omit password hash column)
         List<String[]> users = DatabaseManager.getAllUsers();
         for (String[] user : users) {
-            userModel.addRow(user);
+            userModel.addRow(new String[] { user[0], user[1], user[2] });
         }
 
         // Load Files

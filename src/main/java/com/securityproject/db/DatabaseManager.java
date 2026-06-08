@@ -5,10 +5,17 @@ import com.securityproject.utils.SecurityUtils;
 import java.sql.*;
 
 public class DatabaseManager {
-    // vault name
     private static final String DB_URL = "jdbc:sqlite:securevault.db";
     private static final String DEFAULT_ADMIN_USERNAME = "admin";
-    private static final String DEFAULT_ADMIN_PASSWORD = "admin123";
+
+    private static String getDefaultAdminPassword() {
+        String prop = System.getProperty("sfv.admin.password", System.getenv("SFV_ADMIN_PASSWORD"));
+        if (prop != null && !prop.isBlank()) {
+            return prop;
+        }
+        System.err.println("WARNING: Using default admin password. Set -Dsfv.admin.password or SFV_ADMIN_PASSWORD env var.");
+        return "admin123";
+    }
 
     // connecting to database.
     public static Connection connect() throws SQLException {
@@ -112,7 +119,7 @@ public class DatabaseManager {
         String insertSql = "INSERT INTO users(username, password_hash, role) VALUES (?, ?, 'ADMIN')";
         try (PreparedStatement insert = conn.prepareStatement(insertSql)) {
             insert.setString(1, DEFAULT_ADMIN_USERNAME);
-            insert.setString(2, SecurityUtils.hashPassword(DEFAULT_ADMIN_PASSWORD));
+            insert.setString(2, SecurityUtils.hashPassword(getDefaultAdminPassword()));
             insert.executeUpdate();
         }
     }
@@ -189,12 +196,6 @@ public class DatabaseManager {
         }
     }
 
-    // function for file ownership
-
-    public static void addFile(int userID, String filePath) {
-        addFile(userID, filePath, filePath, "AES legacy", null, null);
-    }
-
     public static void addFile(int userID, String originalPath, String encryptedPath, String algorithm,
                                String integrityHash, String authenticatedMetadata) {
         String sql = "INSERT INTO files(user_id, file_path, original_path, encrypted_path, algorithm, integrity_hash, authenticated_metadata) " +
@@ -209,23 +210,21 @@ public class DatabaseManager {
             pstmt.setString(6, integrityHash);
             pstmt.setString(7, authenticatedMetadata);
             pstmt.executeUpdate();
-            System.out.println("File ownership recorded: " + encryptedPath);
         } catch (SQLException e) {
-            System.out.println("Error adding file ownership: " + e.getMessage());
+            System.err.println("Error adding file ownership: " + e.getMessage());
         }
     }
 
     public static boolean checkFileAccess(int userID, String filePath) {
-        String sql = "SELECT id FROM files WHERE user_id = ? AND (file_path = ? OR encrypted_path = ?)";
+        String sql = "SELECT id FROM files WHERE user_id = ? AND file_path = ?";
         try (Connection conn = connect();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, userID);
             pstmt.setString(2, filePath);
-            pstmt.setString(3, filePath);
             ResultSet rs = pstmt.executeQuery();
-            return rs.next(); // True if a record exists
+            return rs.next();
         } catch (SQLException e) {
-            System.out.println("Error checking file access: " + e.getMessage());
+            System.err.println("Error checking file access: " + e.getMessage());
             return false;
         }
     }
